@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Svenkle.SitecoreSolrOnStartup</id>
+    <version>$version$</version>
+    <authors>Svenkle</authors>
+    <description>A Sitecore initialization pipeline that automatically creates SOLR cores on the target SOLR server.</description>
+	<tags>sitecore solr</tags>
+  </metadata>
+</package>
