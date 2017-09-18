@@ -71,55 +71,16 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App_Config\Include\Svenkle.SitecoreSolrOnStartup.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
     <Content Include="App_Data\Solr\5.1.0\currency.xml" />
-    <Content Include="App_Data\Solr\5.1.0\lang\contractions_ca.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\contractions_fr.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\contractions_ga.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\contractions_it.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\hyphenations_ga.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stemdict_nl.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stoptags_ja.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ar.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_bg.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ca.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ckb.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_cz.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_da.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_de.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_el.txt" />
     <Content Include="App_Data\Solr\5.1.0\lang\stopwords_en.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_es.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_eu.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_fa.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_fi.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_fr.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ga.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_gl.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_hi.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_hu.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_hy.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_id.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_it.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ja.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_lv.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_nl.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_no.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_pt.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ro.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_ru.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_sv.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_th.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\stopwords_tr.txt" />
-    <Content Include="App_Data\Solr\5.1.0\lang\userdict_ja.txt" />
     <Content Include="App_Data\Solr\5.1.0\protwords.txt" />
     <Content Include="App_Data\Solr\5.1.0\schema.xml" />
     <Content Include="App_Data\Solr\5.1.0\solrconfig.xml" />
     <Content Include="App_Data\Solr\5.1.0\stopwords.txt" />
     <Content Include="App_Data\Solr\5.1.0\synonyms.txt" />
+    <None Include="App_Data\Solr\5.1.0\_rest_managed.json" />
+    <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
