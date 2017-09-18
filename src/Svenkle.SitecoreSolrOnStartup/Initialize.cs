@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
@@ -23,7 +24,9 @@ namespace Svenkle.SitecoreSolrOnStartup
             FileSystem = new FileSystem();
             Creators = new ICreateSolrCore[]
             {
-                new CreateLocalSolrCore()
+                // TODO: Load using reflection on ICreateSolrCore
+                new CreateLocalSolrCore(),
+                new CreateSearchStaxSolrCore()
             };
         }
 

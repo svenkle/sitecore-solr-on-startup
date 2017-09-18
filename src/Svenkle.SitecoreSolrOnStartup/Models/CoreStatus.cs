@@ -12,7 +12,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Models
 
         public bool HasCore(string name)
         {
-            return Document.SelectSingleNode($"/response/lst[@name='status']/lst[@name='{name}']") != null;
+            return Document.SelectSingleNode($"/response/lst[@name='status']/lst[contains(@name, '{name}')]") != null;
         }
 
         public XmlDocument Document { get; }
