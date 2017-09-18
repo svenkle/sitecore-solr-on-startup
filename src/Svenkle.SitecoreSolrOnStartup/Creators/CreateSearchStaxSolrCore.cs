@@ -15,7 +15,8 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
     public class CreateSearchStaxSolrCore : ICreateSolrCore
     {
         protected readonly IFileSystem FileSystem;
-        protected static bool ZooKeeperInitialised;
+        protected static bool Initialized;
+        protected static ACL[] Acls;
 
         public CreateSearchStaxSolrCore()
         {
@@ -24,7 +25,11 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
 
         public bool CanCreate(ISystemInformation system, ICoreInformation core, string uri, string configuration)
         {
-            return system.Mode == Mode.SolrCloud;
+            var commandLineArgs = system.Document
+                .SelectSingleNode("/response/lst[@name='jvm']/lst[@name='jmx']/arr[@name='commandLineArgs']")
+                ?.InnerText ?? string.Empty;
+
+            return system.Mode == Mode.SolrCloud && commandLineArgs.Contains("searchstax");
         }
 
         public void Create(HttpClient httpClient, ISystemInformation system, ICoreInformation core, string uri, string configuration, string coreName)
@@ -37,14 +42,30 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             var zooKeeperRoot = "/configs";
             var zooKeeperCoreRoot = $"{zooKeeperRoot}/{coreName}";
 
-            var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromSeconds(15), null);
+            using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(1), null))
+            {
+                while (Equals(zooKeeper.State, ZooKeeper.States.CONNECTING)) { }
 
-            while (Equals(zooKeeper.State, ZooKeeper.States.CONNECTING)) { }
-            
-            var acls = zooKeeper.GetACL("/", new Stat()).ToArray();
+                Initialize(zooKeeper, zooKeeperRoot);
 
-            var files = Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories);
-            var directories = files.Select(Path.GetDirectoryName);
+                var paths = CreateConfigurationPathDictionary(configurationPath);
+
+                CreateNode(zooKeeper, zooKeeperCoreRoot, new byte[0], Acls);
+
+                foreach (var path in paths)
+                {
+                    var data = File.Exists(path.Value) ? File.ReadAllBytes(path.Value) : new byte[0];
+                    CreateNode(zooKeeper, $"{zooKeeperCoreRoot}/{path.Key}", data, Acls);
+                }
+            }
+
+            CreateCore(httpClient, uri, coreName);
+        }
+
+        private Dictionary<string, string> CreateConfigurationPathDictionary(string configurationPath)
+        {
+            var files = FileSystem.Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories);
+            var directories = files.Select(FileSystem.Path.GetDirectoryName);
 
             var paths = files
                 .Concat(directories)
@@ -53,48 +74,48 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
                 .Distinct()
                 .ToDictionary(x => x.Substring(configurationPath.Length + 1).Replace(@"\", "/"));
 
-            if (!ZooKeeperInitialised)
-            {
-                CreateNode(zooKeeper, zooKeeperRoot, new byte[0], acls);
-                CreateNode(zooKeeper, zooKeeperCoreRoot, new byte[0], acls);
-                ZooKeeperInitialised = true;
-            }
+            return paths;
+        }
 
-            foreach (var path in paths)
-            {
-                var data = File.Exists(path.Value) ? File.ReadAllBytes(path.Value) : new byte[0];
-                CreateNode(zooKeeper, $"{zooKeeperCoreRoot}/{path.Key}", data, acls);
-            }
+        private void Initialize(IZooKeeper zooKeeper, string zooKeeperRoot)
+        {
+            if (Initialized)
+                return;
 
+            Acls = zooKeeper.GetACL("/", new Stat()).ToArray();
+            CreateNode(zooKeeper, zooKeeperRoot, new byte[0], Acls);
+            Initialized = true;
+        }
+
+        private void CreateNode(IZooKeeper zooKeeper, string path, byte[] data, IEnumerable<ACL> acls)
+        {
             try
             {
-                var status = CreateCore(httpClient, uri, coreName);
+                zooKeeper.Create(path, data, acls, CreateMode.Persistent);
+                Log.Info($"Created ZooKeeper node at {path}", this);
+            }
+            catch (KeeperException.NodeExistsException)
+            {
+                Log.Warn($"ZooKeeper node {path} already exists", this);
+            }
+        }
 
-                if (!status.IsSuccess)
-                    Log.Warn($"Unable to create SOLR core {coreName}. {status.Message}", this);
+        private void CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName)
+        {
+            try
+            {
+                var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/collections?action=CREATE&name={coreName}&collection.configName={coreName}&numShards=1");
+                var status = new Status(createCoreStatusXml);
+
+                if (status.IsSuccess)
+                    Log.Info($"Created core {coreName}", this);
+                else
+                    Log.Error($"Unable to create SOLR core {coreName}. {status.Message}", this);
             }
             catch (Exception exception)
             {
                 Log.Error($"Unable to create SOLR core {coreName}", exception, this);
             }
-        }
-
-        private static void CreateNode(IZooKeeper zooKeeper, string path, byte[] data, IEnumerable<ACL> acls)
-        {
-            try
-            {
-                zooKeeper.Create(path, data, acls, CreateMode.Persistent);
-            }
-            catch (KeeperException.NodeExistsException)
-            {
-                // Ignore if the node already exists
-            }
-        }
-
-        private static Status CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName)
-        {
-            var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/collections?action=CREATE&name={coreName}&collection.configName={coreName}&numShards=1");
-            return new Status(createCoreStatusXml);
         }
     }
 }

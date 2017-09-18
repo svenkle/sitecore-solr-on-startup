@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Net.Http;
 using System.Web;
 using Sitecore.Configuration;
@@ -22,12 +22,11 @@ namespace Svenkle.SitecoreSolrOnStartup
         public Initialize()
         {
             FileSystem = new FileSystem();
-            Creators = new ICreateSolrCore[]
-            {
-                // TODO: Load using reflection on ICreateSolrCore
-                new CreateLocalSolrCore(),
-                new CreateSearchStaxSolrCore()
-            };
+            Creators = typeof(ICreateSolrCore).Assembly
+                .GetTypes()
+                .Where(x => typeof(ICreateSolrCore).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+                .Select(x => (ICreateSolrCore)Activator.CreateInstance(x))
+                .ToArray();
         }
 
         public void Process(PipelineArgs args)

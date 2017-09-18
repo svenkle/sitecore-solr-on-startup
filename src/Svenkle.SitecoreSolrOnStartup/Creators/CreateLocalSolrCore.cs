@@ -21,7 +21,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             return system.Mode == Mode.Std;
         }
 
-        public void Create(HttpClient httpClient, ISystemInformation system, ICoreInformation core, string uri, 
+        public void Create(HttpClient httpClient, ISystemInformation system, ICoreInformation core, string uri,
             string configuration, string coreName)
         {
             if (core.HasCore(coreName))
@@ -36,23 +36,25 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             foreach (var newPath in FileSystem.Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories))
                 FileSystem.File.Copy(newPath, newPath.Replace(configurationPath, solrConfigurationPath), true);
 
+            CreateCore(httpClient, uri, coreName);
+        }
+
+        private void CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName)
+        {
             try
             {
-                var status = CreateCore(httpClient, uri, coreName);
+                var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/cores?action=CREATE&name={coreName}");
+                var status = new Status(createCoreStatusXml);
 
-                if (!status.IsSuccess)
-                    Log.Warn($"Unable to create SOLR core {coreName}. {status.Message}", this);
+                if (status.IsSuccess)
+                    Log.Info($"Created core {coreName}", this);
+                else
+                    Log.Error($"Unable to create SOLR core {coreName}. {status.Message}", this);
             }
             catch (Exception exception)
             {
                 Log.Error($"Unable to create SOLR core {coreName}", exception, this);
             }
-        }
-
-        private static Status CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName)
-        {
-            var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/cores?action=CREATE&name={coreName}");
-            return new Status(createCoreStatusXml);
         }
     }
 }
