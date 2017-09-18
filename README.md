@@ -3,7 +3,7 @@ A Sitecore initialization pipeline that automatically creates SOLR cores on the 
 
 ## Getting Started
 ### NuGet Package
-TBC
+`Install-Package Svenkle.SitecoreSolrOnStartup`
 
 ## FAQ
 ### Can I use this on SOLR version X?
