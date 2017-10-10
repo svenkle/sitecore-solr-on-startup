@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Web;
 using Sitecore.Configuration;
-using Sitecore.ContentSearch.ProviderSupport.Solr;
 using Sitecore.ContentSearch.SolrProvider;
 using Sitecore.Diagnostics;
 using Sitecore.Pipelines;
@@ -48,8 +47,10 @@ namespace Svenkle.SitecoreSolrOnStartup
 
                     var templatePath = Path.Combine(configuration, systemInformation.Version);
                     var schemaPath = Path.Combine(templatePath, "schema.xml");
+                    var configurationPath = Path.Combine(templatePath, "solrconfig.xml");
 
                     CreateSitecoreSolrSchema(schemaPath);
+                    CreateSitecoreSolrConfiguration(configurationPath);
 
                     foreach (var coreName in SolrContentSearchManager.Cores)
                     {
@@ -87,10 +88,16 @@ namespace Svenkle.SitecoreSolrOnStartup
             return new CoreInformation(xml);
         }
 
-        protected bool CreateSitecoreSolrSchema(string inputPath)
+        protected void CreateSitecoreSolrSchema(string schemaPath)
         {
             var schemaGenerator = new SchemaGenerator();
-            return schemaGenerator.GenerateSchema(inputPath, inputPath);
+            schemaGenerator.GenerateSchema(schemaPath);
+        }
+
+        protected void CreateSitecoreSolrConfiguration(string solrConfigurationPath)
+        {
+            var configurationGenerator = new ConfigurationGenerator();
+            configurationGenerator.GenerateConfiguration(solrConfigurationPath);
         }
     }
 }
