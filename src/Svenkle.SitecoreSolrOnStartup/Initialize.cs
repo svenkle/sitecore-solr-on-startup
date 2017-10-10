@@ -40,7 +40,7 @@ namespace Svenkle.SitecoreSolrOnStartup
                     var configuration = Path.Combine(HttpRuntime.AppDomainAppPath, "App_Data", "Solr");
 
                     var systemInformation = GetSystemInformation(httpClient, uri);
-                    var coreInformation = GetCoreInformation(httpClient, uri);
+                    var coreInformation = GetCoreInformation(httpClient, systemInformation, uri);
 
                     var templatePath = Path.Combine(configuration, systemInformation.Version);
                     var schemaPath = Path.Combine(templatePath, "schema.xml");
@@ -79,9 +79,11 @@ namespace Svenkle.SitecoreSolrOnStartup
             return new SystemInformation(xml);
         }
 
-        protected ICoreInformation GetCoreInformation(HttpClient httpClient, string endpointUri)
+        protected ICoreInformation GetCoreInformation(HttpClient httpClient, ISystemInformation systemInformation, string endpointUri)
         {
-            var xml = HttpClientHelper.GetXmlString(httpClient, $"{endpointUri}/admin/cores?action=STATUS");
+            var xml = HttpClientHelper.GetXmlString(httpClient, systemInformation.Mode == Mode.SolrCloud ?
+                $"{endpointUri}/admin/collections?action=LIST" : $"{endpointUri}/admin/cores?action=STATUS&indexInfo=false");
+
             return new CoreInformation(xml);
         }
 
