@@ -35,7 +35,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             var zooKeeperRoot = "/configs";
             var zooKeeperCoreRoot = $"{zooKeeperRoot}/{coreName}";
 
-            using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(5), null))
+            using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(1), null))
             {
                 while (Equals(zooKeeper.State, ZooKeeper.States.CONNECTING)) { }
 
