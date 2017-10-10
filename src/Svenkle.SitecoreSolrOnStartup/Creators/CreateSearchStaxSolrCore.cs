@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Net.Http;
 using Org.Apache.Zookeeper.Data;
@@ -14,15 +13,9 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
 {
     public class CreateSearchStaxSolrCore : ICreateSolrCore
     {
-        protected readonly IFileSystem FileSystem;
         protected static bool Initialized;
         protected static ACL[] Acls;
-
-        public CreateSearchStaxSolrCore()
-        {
-            FileSystem = new FileSystem();
-        }
-
+        
         public bool CanCreate(ISystemInformation system, ICoreInformation core, string uri, string configuration)
         {
             var commandLineArgs = system.Document
@@ -37,7 +30,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             if (core.HasCore(coreName))
                 return;
 
-            var configurationPath = FileSystem.Path.Combine(configuration, system.Version);
+            var configurationPath = Path.Combine(configuration, system.Version);
             var zooKeeperUri = Settings.GetSetting("ContentSearch.Solr.ZooKeeperServiceBaseAddress", $"{new Uri(uri).Host}:2181");
             var zooKeeperRoot = "/configs";
             var zooKeeperCoreRoot = $"{zooKeeperRoot}/{coreName}";
@@ -62,10 +55,10 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             CreateCore(httpClient, uri, coreName);
         }
 
-        private Dictionary<string, string> CreateConfigurationPathDictionary(string configurationPath)
+        private static Dictionary<string, string> CreateConfigurationPathDictionary(string configurationPath)
         {
-            var files = FileSystem.Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories);
-            var directories = files.Select(FileSystem.Path.GetDirectoryName);
+            var files = Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories);
+            var directories = files.Select(Path.GetDirectoryName);
 
             var paths = files
                 .Concat(directories)

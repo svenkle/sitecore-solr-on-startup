@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Net.Http;
 using System.Web;
@@ -15,12 +14,10 @@ namespace Svenkle.SitecoreSolrOnStartup
 {
     public class Initialize
     {
-        protected readonly IFileSystem FileSystem;
         protected readonly ICreateSolrCore[] Creators;
 
         public Initialize()
         {
-            FileSystem = new FileSystem();
             Creators = typeof(ICreateSolrCore).Assembly
                 .GetTypes()
                 .Where(x => typeof(ICreateSolrCore).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)

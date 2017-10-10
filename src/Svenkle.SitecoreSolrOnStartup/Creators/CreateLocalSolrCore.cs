@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Abstractions;
 using System.Net.Http;
 using Sitecore.Diagnostics;
 using Svenkle.SitecoreSolrOnStartup.Models;
@@ -9,13 +8,6 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
 {
     public class CreateLocalSolrCore : ICreateSolrCore
     {
-        protected readonly IFileSystem FileSystem;
-
-        public CreateLocalSolrCore()
-        {
-            FileSystem = new FileSystem();
-        }
-
         public bool CanCreate(ISystemInformation system, ICoreInformation core, string uri, string configuration)
         {
             return system.Mode == Mode.Std;
@@ -27,14 +19,14 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             if (core.HasCore(coreName))
                 return;
 
-            var configurationPath = FileSystem.Path.Combine(configuration, system.Version);
-            var solrConfigurationPath = FileSystem.Path.Combine(system.Path, coreName, "conf");
+            var configurationPath = Path.Combine(configuration, system.Version);
+            var solrConfigurationPath = Path.Combine(system.Path, coreName, "conf");
 
-            foreach (var dirPath in FileSystem.Directory.GetDirectories(configurationPath, "*", SearchOption.AllDirectories))
-                FileSystem.Directory.CreateDirectory(dirPath.Replace(configurationPath, solrConfigurationPath));
+            foreach (var dirPath in Directory.GetDirectories(configurationPath, "*", SearchOption.AllDirectories))
+                Directory.CreateDirectory(dirPath.Replace(configurationPath, solrConfigurationPath));
 
-            foreach (var newPath in FileSystem.Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories))
-                FileSystem.File.Copy(newPath, newPath.Replace(configurationPath, solrConfigurationPath), true);
+            foreach (var newPath in Directory.GetFiles(configurationPath, "*.*", SearchOption.AllDirectories))
+                File.Copy(newPath, newPath.Replace(configurationPath, solrConfigurationPath), true);
 
             CreateCore(httpClient, uri, coreName);
         }
