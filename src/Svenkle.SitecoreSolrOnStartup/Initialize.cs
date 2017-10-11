@@ -51,24 +51,31 @@ namespace Svenkle.SitecoreSolrOnStartup
 
                     foreach (var coreName in SolrContentSearchManager.Cores)
                     {
-                        var processed = false;
-
-                        foreach (var creator in Creators)
+                        try
                         {
-                            if (!creator.CanCreate(systemInformation, coreInformation, uri, configuration))
-                                continue;
+                            var processed = false;
 
-                            creator.Create(httpClient, systemInformation, coreInformation, uri, configuration, coreName);
-                            processed = true;
+                            foreach (var creator in Creators)
+                            {
+                                if (!creator.CanCreate(systemInformation, coreInformation, uri, configuration))
+                                    continue;
+                                
+                                creator.Create(httpClient, systemInformation, coreInformation, uri, configuration, coreName);
+                                processed = true;
+                            }
+
+                            if (!processed)
+                                Log.Warn($"No SOLR creator processes ran for core {coreName}", this);
                         }
-
-                        if (!processed)
-                            Log.Warn($"No SOLR creator processes ran for core {coreName}", this);
+                        catch (Exception exception)
+                        {
+                            Log.Warn($"An error occurred while trying to create SOLR core {coreName}", exception);
+                        }
                     }
                 }
                 catch (Exception exception)
                 {
-                    Log.Warn("An unhandled error occurred while trying to create SOLR cores", exception, this);
+                    Log.Error("An unhandled error occurred while trying to create SOLR cores", exception);
                 }
             }
         }
