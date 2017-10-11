@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using Org.Apache.Zookeeper.Data;
+using Polly;
 using Sitecore.Configuration;
 using Sitecore.Diagnostics;
 using Svenkle.SitecoreSolrOnStartup.Models;
@@ -15,7 +16,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
     {
         protected static bool Initialized;
         protected static ACL[] Acls;
-        
+
         public bool CanCreate(ISystemInformation system, ICoreInformation core, string uri, string configuration)
         {
             var commandLineArgs = system.Document
@@ -30,29 +31,37 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             if (core.HasCore(coreName))
                 return;
 
-            var configurationPath = Path.Combine(configuration, system.Version);
-            var zooKeeperUri = Settings.GetSetting("ContentSearch.Solr.ZooKeeperServiceBaseAddress", $"{new Uri(uri).Host}:2181");
+            var retryCount = Settings.GetIntSetting("ContentSearch.Solr.SearchStax.ZooKeeperRetryCount", 5);
+            var zooKeeperUri = Settings.GetSetting("ContentSearch.Solr.SearchStax.ZooKeeperServiceBaseAddress", $"{new Uri(uri).Host}:2181");
             var zooKeeperRoot = "/configs";
+            var configurationPath = Path.Combine(configuration, system.Version);
             var zooKeeperCoreRoot = $"{zooKeeperRoot}/{coreName}";
-
-            using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(1), null))
+            var zooKeeperRetryPolicy = Policy.Handle<Exception>().Retry(retryCount, (exception, retry) =>
             {
-                while (Equals(zooKeeper.State, ZooKeeper.States.CONNECTING)) { }
-
-                Initialize(zooKeeper, zooKeeperRoot);
-
-                var paths = CreateConfigurationPathDictionary(configurationPath);
-
-                CreateNode(zooKeeper, zooKeeperCoreRoot, new byte[0], Acls);
-
-                foreach (var path in paths)
+                Log.Warn($"Error communicating with ZooKeeper. Retrying... {retry} of {retryCount}", exception);
+            });
+            
+            zooKeeperRetryPolicy.Execute(() =>
+            {
+                using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(1), null))
                 {
-                    var data = File.Exists(path.Value) ? File.ReadAllBytes(path.Value) : new byte[0];
-                    CreateNode(zooKeeper, $"{zooKeeperCoreRoot}/{path.Key}", data, Acls);
-                }
-            }
+                    while (Equals(zooKeeper.State, ZooKeeper.States.CONNECTING)) { }
 
-            CreateCore(httpClient, uri, coreName);
+                    Initialize(zooKeeper, zooKeeperRoot);
+
+                    var paths = CreateConfigurationPathDictionary(configurationPath);
+
+                    CreateNode(zooKeeper, zooKeeperCoreRoot, new byte[0], Acls);
+
+                    foreach (var path in paths)
+                    {
+                        var data = File.Exists(path.Value) ? File.ReadAllBytes(path.Value) : new byte[0];
+                        CreateNode(zooKeeper, $"{zooKeeperCoreRoot}/{path.Key}", data, Acls);
+                    }
+                }
+
+                CreateCore(httpClient, uri, coreName);
+            });
         }
 
         private static Dictionary<string, string> CreateConfigurationPathDictionary(string configurationPath)
