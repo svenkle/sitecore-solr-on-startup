@@ -32,6 +32,9 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
                 return;
 
             var retryCount = Settings.GetIntSetting("ContentSearch.Solr.SearchStax.ZooKeeperRetryCount", 5);
+            var numShards = Settings.GetIntSetting("ContentSearch.Solr.SearchStax.NumShards", 1);
+            var replicationFactor = Settings.GetIntSetting("ContentSearch.Solr.SearchStax.ReplicationFactor", 1);
+            var maxShardsPerNode = Settings.GetIntSetting("ContentSearch.Solr.SearchStax.MaxShardsPerNode", 1);
             var zooKeeperUri = Settings.GetSetting("ContentSearch.Solr.SearchStax.ZooKeeperServiceBaseAddress", $"{new Uri(uri).Host}:2181");
             var zooKeeperRoot = "/configs";
             var configurationPath = Path.Combine(configuration, system.Version);
@@ -40,7 +43,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             {
                 Log.Warn($"Error communicating with ZooKeeper. Retrying... {retry} of {retryCount}", exception);
             });
-            
+
             zooKeeperRetryPolicy.Execute(() =>
             {
                 using (var zooKeeper = new ZooKeeper(zooKeeperUri, TimeSpan.FromMinutes(1), null))
@@ -60,7 +63,7 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
                     }
                 }
 
-                CreateCore(httpClient, uri, coreName);
+                CreateCore(httpClient, uri, coreName, numShards, replicationFactor, maxShardsPerNode);
             });
         }
 
@@ -102,11 +105,11 @@ namespace Svenkle.SitecoreSolrOnStartup.Creators
             }
         }
 
-        private void CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName)
+        private void CreateCore(HttpClient httpClient, string solrEndpointUri, string coreName, int numShards, int replicationFactor, int maxShardsPerNode)
         {
             try
             {
-                var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/collections?action=CREATE&name={coreName}&collection.configName={coreName}&numShards=1");
+                var createCoreStatusXml = HttpClientHelper.GetXmlString(httpClient, $"{solrEndpointUri}/admin/collections?action=CREATE&name={coreName}&collection.configName={coreName}&numShards={numShards}&replicationFactor={replicationFactor}&maxShardsPerNode={maxShardsPerNode}");
                 var status = new Status(createCoreStatusXml);
 
                 if (status.IsSuccess)
